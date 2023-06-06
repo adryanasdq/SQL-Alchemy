@@ -28,59 +28,172 @@ class Todo(db.Model):
     def __repr__(self):
         return f'Todo <{self.name}>'
 
-@app.route('/users/')
+@app.get('/users')
 def get_users():
     return jsonify([
         {
-            '_id':user.public_id, 'name':user.name, 'email':user.email,
+            '_id':user.public_id,
+            'name':user.name,
+            'email':user.email,
             'is_admin':user.is_admin
         } for user in User.query.all()            
     ])
 
-@app.route('/users/<id>/')
-def get_user(id):
-    print(id)
-    user = User.query.filter_by(public_id=id).first_or_404()
-    return {
-        'id':user.public_id, 'name':user.name,
-        'email':user.email, 'is_admin':user.is_admin
-    }
-
-@app.post('/users/')
+@app.post('/users')
 def create_user():
-    data = request.get_json()
-    if not 'name' in data or not 'email' in data:
-        return jsonify({
-            'error':'Bad Request',
-            'message':'Masukkan name dan email!'
-        }), 400
-    if len(data['name']) < 3 or len(data['email']) <6:
-        return jsonify({
-            'error':'Bad Request',
-            'message':'Nama dan email harus memiliki minimal 3 karakter!'
-        }), 400
+    name = request.json.get('name')
+    email = request.json.get('email')
+    is_admin = request.json.get('is_admin', False)
+    if not name or not email:
+        return jsonify({'error': 'Bad Request', 'message': 'Name or email not provided.'}), 400
     u = User(
-        name = data['name'],
-        email=data['email'],
-        is_admin = data['is_admin', False],
-        public_id = str(uuid.uuid4())
+        name=name,
+        email=email,
+        is_admin=is_admin,
+        public_id=str(uuid.uuid4())
     )
     db.session.add(u)
     db.session.commit()
     return {
-        'id':u.public_id, 'name':u.name,
-        'email':u.email, 'is_admin':u.is_admin
+        'id': u.public_id,
+        'name': u.name,
+        'email': u.email,
+        'is_admin': u.is_admin
     }, 201
 
-# @app.put('/users/<id>/')
-# def update_user(id):
-#     data = request.get_json()
-#     if 'name' not in data:
-#         return jsonify({
-#             'error':'Bad Request',
-#             'message':'Masukkan nama!'
-#         }), 400
-#     user = User.query.filter_by()
+@app.route('/users/<id>', methods=['GET', 'PUT', 'DELETE'])
+def update_user(id):
+    user = User.query.filter_by(public_id=id).first_or_404()
+
+    if request.method == 'GET':
+        return jsonify({
+            'id': user.public_id, 
+            'name': user.name,
+            'is_admin': user.is_admin,
+            'email': user.email
+            })
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        if 'name' not in data:
+            return {
+                'error': 'Bad Request',
+                'message': 'Name field needs to be present'
+            }, 400
+        user.name = data['name']
+        if 'is_admin' in data:
+            user.is_admin=data['is_admin']
+        db.session.commit()
+        return jsonify({
+            'id': user.public_id, 
+            'name': user.name,
+            'is_admin': user.is_admin,
+            'email': user.email
+            })
+    
+    elif request.method == 'DELETE':
+        db.session.delete(user)
+        db.session.commit()
+        return {
+            'success' : 'data has been deleted'
+        }
+
+@app.get('/todos')
+def get_todos():
+    return jsonify([
+        {
+            'id': todo.public_id,
+            'name_todo': todo.name,
+            'is_completed':todo.is_completed,
+            'owner': {
+                'name': todo.owner.name,
+                'email': todo.owner.email,
+                'public_id': todo.owner.public_id
+            }
+        } for todo in Todo.query.all()
+    ])
+
+@app.post('/todos')
+def create_todo():
+    name = request.json.get('name')
+    email = request.json.get('email')
+    is_completed = request.json.get('is_completed', False)
+    if not name or not email:
+        return jsonify({
+            'error':'Bad Request',
+            'message':'Name or Email not given'
+        }), 400
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return {
+            'error': 'Bad Request',
+            'message': 'Invalid email, no user with that email'
+        }
+    todo = Todo(
+        name = name,
+        user_id = user.id,
+        is_completed = is_completed,
+        public_id = str(uuid.uuid4())
+    )
+    db.session.add(todo)
+    db.session.commit()
+    return {
+        'id': todo.public_id,
+        'name': todo.name,
+        'is_completed': todo.is_completed,
+        'owner': {
+            'name':todo.owner.name,
+            'email': todo.owner.email,
+            'is_admin': todo.owner.is_admin
+        }
+    }, 201
+
+@app.route('/todos/<id>', methods=['GET', 'PUT', 'DELETE'])
+def get_todo(id):
+    todo = Todo.query.filter_by(public_id=id).first_or_404()
+
+    if request.method == 'GET':
+        return jsonify(
+            {
+                'id': todo.public_id,
+                'name': todo.name,
+                'owner': {
+                    'name': todo.owner.name,
+                    'email': todo.owner.email,
+                    'public_id': todo.owner.public_id
+                }
+            })
+    
+    elif request.method == 'PUT':
+        name = request.json.get('name')
+        is_completed = request.json.get('is_completed')
+        if not name:
+            return {
+                'error': 'Bad Request',
+                'message': 'Name not given'
+            }
+        todo.name = name
+        if is_completed:
+            todo.is_completed = is_completed
+        db.session.commit()
+        return jsonify(
+            {
+                'id': todo.public_id,
+                'name': todo.name,
+                'is_completed': todo.is_completed,
+                'owner': {
+                    'name': todo.owner.name,
+                    'email': todo.owner.email,
+                    'public_id': todo.owner.public_id
+                }
+            }), 201
+    
+    elif request.method == 'DELETE':
+        db.session.delete(todo)
+        db.session.commit()
+        return {
+            'success':'Data has been deleted'
+        }
 
 if __name__ == '__main__':
     app.run(debug=True)

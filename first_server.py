@@ -13,7 +13,7 @@ class User(db.Model):
 	email = db.Column(db.String(28), nullable=False, unique=True)
 	public_id = db.Column(db.String, nullable=False)
 	is_admin = db.Column(db.Boolean, default=False)
-	todos=db.relationship('Todo', backref='owner', lazy='dynamic')
+	todos = db.relationship('Todo', backref='owner', lazy='dynamic')
 
 	def __repr__(self):
 		return f'User <{self.email}>'
@@ -23,7 +23,7 @@ class Todo(db.Model):
     name = db.Column(db.String(20), nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     public_id = db.Column(db.String, nullable=False)
-    user_id=db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     def __repr__(self):
         return f'Todo <{self.name}>'

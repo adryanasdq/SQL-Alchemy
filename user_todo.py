@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import uuid
+import base64
 
 app = Flask(__name__)
 app.config['SECRET_KEY']='secret'
@@ -28,6 +29,20 @@ class Todo(db.Model):
     def __repr__(self):
         return f'Todo <{self.name}>'
 
+
+@app.get('/')
+def login():
+    auth = request.headers.get('Authorization')
+    auth_type, code = auth.split(' ')
+    decoded_string = (base64.b64decode(code).decode())
+    username, password = decoded_string.split(':')
+
+    users = User.query.all()
+    for user in users:
+        if user.name == username and user.is_admin == True:
+            return True
+    return False
+
 @app.get('/users')
 def get_users():
     return jsonify([
@@ -41,62 +56,68 @@ def get_users():
 
 @app.post('/users')
 def create_user():
-    name = request.json.get('name')
-    email = request.json.get('email')
-    is_admin = request.json.get('is_admin', False)
-    if not name or not email:
-        return jsonify({'error': 'Bad Request', 'message': 'Name or email not provided.'}), 400
-    u = User(
-        name=name,
-        email=email,
-        is_admin=is_admin,
-        public_id=str(uuid.uuid4())
-    )
-    db.session.add(u)
-    db.session.commit()
-    return {
-        'id': u.public_id,
-        'name': u.name,
-        'email': u.email,
-        'is_admin': u.is_admin
-    }, 201
+    if login():
+        name = request.json.get('name')
+        email = request.json.get('email')
+        is_admin = request.json.get('is_admin', False)
+        if not name or not email:
+            return jsonify({'error': 'Bad Request', 'message': 'Name or email not provided.'}), 400
+        u = User(
+            name=name,
+            email=email,
+            is_admin=is_admin,
+            public_id=str(uuid.uuid4())
+        )
+        db.session.add(u)
+        db.session.commit()
+        return {
+            'id': u.public_id,
+            'name': u.name,
+            'email': u.email,
+            'is_admin': u.is_admin
+        }, 201
+    else:
+        return 'You are not authorized'
 
 @app.route('/users/<id>', methods=['GET', 'PUT', 'DELETE'])
 def update_user(id):
     user = User.query.filter_by(public_id=id).first_or_404()
 
-    if request.method == 'GET':
-        return jsonify({
-            'id': user.public_id, 
-            'name': user.name,
-            'is_admin': user.is_admin,
-            'email': user.email
-            })
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        if 'name' not in data:
+    if login():
+        if request.method == 'GET':
+            return jsonify({
+                'id': user.public_id, 
+                'name': user.name,
+                'is_admin': user.is_admin,
+                'email': user.email
+                })
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            if 'name' not in data:
+                return {
+                    'error': 'Bad Request',
+                    'message': 'Name field needs to be present'
+                }, 400
+            user.name = data['name']
+            if 'is_admin' in data:
+                user.is_admin=data['is_admin']
+            db.session.commit()
+            return jsonify({
+                'id': user.public_id, 
+                'name': user.name,
+                'is_admin': user.is_admin,
+                'email': user.email
+                })
+        
+        elif request.method == 'DELETE':
+            db.session.delete(user)
+            db.session.commit()
             return {
-                'error': 'Bad Request',
-                'message': 'Name field needs to be present'
-            }, 400
-        user.name = data['name']
-        if 'is_admin' in data:
-            user.is_admin=data['is_admin']
-        db.session.commit()
-        return jsonify({
-            'id': user.public_id, 
-            'name': user.name,
-            'is_admin': user.is_admin,
-            'email': user.email
-            })
-    
-    elif request.method == 'DELETE':
-        db.session.delete(user)
-        db.session.commit()
-        return {
-            'success' : 'data has been deleted'
-        }
+                'success' : 'data has been deleted'
+            }
+    else:
+        return 'You are not authorized'
 
 @app.get('/todos')
 def get_todos():

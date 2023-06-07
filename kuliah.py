@@ -15,6 +15,7 @@ class Mahasiswa(db.Model):
     gender = db.Column(db.String())
     kontak = db.Column(db.String())
     email = db.Column(db.String())
+    relation_kelas_ampu = db.relationship('KelasAmpu', backref='mahasiswa', lazy='dynamic')
 
     def __init__(self, nama, gender, kontak, email):
         self.nama = nama
@@ -24,7 +25,8 @@ class Mahasiswa(db.Model):
 
     def __repr__(self):
         return f'<Mahasiswa {self.nama}>'
-    
+
+
 class Matkul(db.Model):
     __tablename__ = 'mata_kuliah'
 
@@ -40,6 +42,7 @@ class Matkul(db.Model):
     
     def __repr__(self):
         return f'<Mata Kuliah {self.nama_mk}>'
+
 
 class Dosen(db.Model):
     __tablename__ = 'dosen'
@@ -60,7 +63,8 @@ class Dosen(db.Model):
 
     def __repr__(self):
         return f'<Dosen {self.nip_dosen}>'
-    
+
+
 class RuangKelas(db.Model):
     __tablename__ = 'ruang_kelas'
 
@@ -79,6 +83,18 @@ class RuangKelas(db.Model):
 
     def __repr__(self):
         return f'<RuangKelas {self.nama_ruang_kelas}>'
+
+
+class KelasAmpu(db.Model):
+    __tablename__ = 'kelas_ampu'
+
+    nim = db.Column(db.Integer, db.ForeignKey('mahasiswa.nim'), primary_key=True)
+    kode_ruang_kelas = db.Column(db.String(), db.ForeignKey('ruang_kelas.kode_ruang_kelas'), primary_key=True)
+
+    def __init__(self, nim, kode_ruang_kelas):
+        self.nim = nim
+        self.kode_ruang_kelas = kode_ruang_kelas
+
 
 @app.get('/mahasiswa')
 def getMahasiswa():
@@ -148,6 +164,20 @@ def getMatkul():
     
     return {'count': len(response), 'matakuliah':response}
 
+@app.get('/dosen')
+def getDosen():
+    dataDosen = Dosen.query.all()
+    response = [
+        {
+            'nip':dd.nip_dosen,
+            'nama':dd.nama,
+            'gender':dd.gender,
+            'kontak':dd.kontak,
+            'email':dd.email
+        } for dd in dataDosen]
+    
+    return {'count': len(response), 'mahasiswa':response}
+
 @app.get('/ruangkelas')
 def getKelas():
     datakelas = RuangKelas.query.all()
@@ -162,6 +192,17 @@ def getKelas():
         } for dk in datakelas]
     
     return {'count': len(response), 'ruangkelas': response}
+
+@app.get('/kelasampu')
+def getAmpu():
+    dataAmpu = KelasAmpu.query.all()
+    response = [
+        {
+            'nim': da.nim,
+            'kode_ruang_kelas': da.kode_ruang_kelas
+        } for da in dataAmpu]
+    
+    return {'count': len(response), 'kelasampu': response}
 
 if __name__ == '__main__':
 	app.run(debug=True)

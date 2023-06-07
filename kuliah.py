@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -106,21 +106,22 @@ def getMahasiswa():
             'gender':m.gender,
             'kontak':m.kontak,
             'email':m.email
-        } for m in datamahasiswa]
-    
+        } for m in datamahasiswa
+    ]
     return {'count': len(response), 'mahasiswa':response}
 
 @app.post('/mahasiswa')
 def addMahasiswa():
     data = request.get_json()
     new_mhs = Mahasiswa(
-        nama = data['nama'],
-        gender = data['gender'],
-        kontak = data['kontak'],
-        email = data['email'])
+        nama = data.get('nama'),
+        gender = data.get('gender'),
+        kontak = data.get('kontak'),
+        email = data.get('email')
+    )
     db.session.add(new_mhs)
     db.session.commit()
-    return {"message":f"Mahasiswa baru ditambahkan"}
+    return {"message":f"Mahasiswa {new_mhs.nama} ditambahkan"}
 
 @app.route('/mahasiswa/<nim>', methods=['GET', 'PUT', 'DELETE'])
 def handleMahasiswa(nim):
@@ -138,11 +139,11 @@ def handleMahasiswa(nim):
     
     elif request.method == 'PUT':
         data = request.get_json()
-        mhs.nim = data['nim']
-        mhs.nama = data['nama']
-        mhs.gender = data['gender']
-        mhs.kontak = data['kontak']
-        mhs.email = data['email']
+        mhs.nim = data.get('nim')
+        mhs.nama = data.get('nama')
+        mhs.gender = data.get('gender')
+        mhs.kontak = data.get('kontak')
+        mhs.email = data.get('email')
         db.session.add(mhs)
         db.session.commit()
         return {'message': f'Mahasiswa {mhs.nama} berhasil diupdate'}
@@ -160,16 +161,54 @@ def getMatkul():
             'kode_mk': dm.kode_mk,
             'nama_mk': dm.nama_mk,
             'sks': dm.sks
-        } for dm in datamatkul]
-    
+        } for dm in datamatkul
+    ]
     return {'count': len(response), 'matakuliah':response}
+
+@app.post('/matakuliah')
+def addMatkul():
+    data = request.get_json()
+    new_matkul = Matkul(
+        kode_mk = data.get('kode_mk'),
+        nama_mk = data.get('nama_mk'),
+        sks = data.get('sks')
+    )
+    db.session.add(new_matkul)
+    db.session.commit()
+    return {'message':f'Matkul {new_matkul.nama_mk} ditambahkan'}
+
+@app.route('/matakuliah/<kode_mk>', methods=['GET', 'PUT', 'DELETE'])
+def handleMatkul(kode_mk):
+    mk = Matkul.query.get_or_404(kode_mk)
+
+    if request.method == 'GET':
+        response = {
+            'kode_mk': mk.kode_mk,
+            'nama_mk': mk.nama_mk,
+            'sks': mk.sks
+        }
+        return {'message': 'success', 'data': response}
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        mk.kode_mk = data.get('kode_mk')
+        mk.nama_mk = data.get('nama_mk')
+        mk.sks = int(data.get('sks'))
+        db.session.add(mk)
+        db.session.commit()
+        return {'message': f'Matkul {mk.nama_mk} berhasil diupdate'}
+    
+    elif request.method == 'DELETE':
+        db.session.delete(mk)
+        db.session.commit()
+        return {'message': f'Matkul {mk.nama_mk} berhasil dihapus'}
 
 @app.get('/dosen')
 def getDosen():
     dataDosen = Dosen.query.all()
     response = [
         {
-            'nip':dd.nip_dosen,
+            'nip_dosen':dd.nip_dosen,
             'nama':dd.nama,
             'gender':dd.gender,
             'kontak':dd.kontak,
@@ -177,6 +216,50 @@ def getDosen():
         } for dd in dataDosen]
     
     return {'count': len(response), 'mahasiswa':response}
+
+@app.post('/dosen')
+def addDosen():
+    data = request.get_json()
+    new_dosen = Dosen(
+        nip_dosen = data.get('nip_dosen'),
+        nama = data.get('nama'),
+        gender = data.get('gender'),
+        kontak = data.get('kontak'),
+        email = data.get('email')
+    )
+    db.session.add(new_dosen)
+    db.session.commit()
+    return {'message':f'Dosen {new_dosen.nama} ditambahkan'}
+
+@app.route('/dosen/<nip_dosen>', methods=['GET', 'PUT', 'DELETE'])
+def handleDosen(nip_dosen):
+    dsn = Dosen.query.get_or_404(nip_dosen)
+
+    if request.method == 'GET':
+        response = {
+            'nip_dosen': dsn.nip_dosen,
+            'nama': dsn.nama,
+            'gender': dsn.gender,
+            'kontak': dsn.kontak,
+            'email': dsn.email
+        }
+        return {'message': 'success', 'data': response}
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        dsn.nip_dosen = int(data.get('nip_dosen'))
+        dsn.nama = data.get('nama')
+        dsn.gender = data.get('gender')
+        dsn.kontak = data.get('kontak')
+        dsn.email = data.get('email')
+        db.session.add(dsn)
+        db.session.commit()
+        return {'message': f'Dosen {dsn.nama} berhasil diupdate'}
+    
+    elif request.method == 'DELETE':
+        db.session.delete(dsn)
+        db.session.commit()
+        return {'message': f'Dosen {dsn.nama} berhasil dihapus'}
 
 @app.get('/ruangkelas')
 def getKelas():

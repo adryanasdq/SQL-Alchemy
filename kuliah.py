@@ -31,7 +31,7 @@ class Matkul(db.Model):
     kode_mk = db.Column(db.String(), primary_key=True)
     nama_mk = db.Column(db.String())
     sks = db.Column(db.Integer)
-    # relation_kelas = db.relationship('RuangKelas', backref='mk', lazy='dynamic')
+    relation_kelas = db.relationship('RuangKelas', backref='mk', lazy='dynamic')
 
     def __init__(self, kode_mk, nama_mk, sks):
         self.kode_mk = kode_mk
@@ -49,7 +49,7 @@ class Dosen(db.Model):
     gender = db.Column(db.String())
     kontak = db.Column(db.String)
     email = db.Column(db.String)
-    # relation_kelas = db.relationship('RuangKelas', backref='dosen', lazy='dynamic')
+    relation_kelas = db.relationship('RuangKelas', backref='dosen', lazy='dynamic')
 
     def __init__(self, nip_dosen, nama, gender, kontak, email):
         self.nip_dosen = nip_dosen
@@ -66,8 +66,8 @@ class RuangKelas(db.Model):
 
     kode_ruang_kelas = db.Column(db.String(5), primary_key=True)
     nama_ruang_kelas = db.Column(db.String(30))
-    nip_dosen = db.Column(db.Integer, db.ForeignKey('Dosen.nip_dosen'), nullable=False)
-    kode_mk = db.Column(db.String(), db.ForeignKey('Matkul.kode_mk'), nullable=False)
+    nip_dosen = db.Column(db.Integer, db.ForeignKey('dosen.nip_dosen'), nullable=False)
+    kode_mk = db.Column(db.String(), db.ForeignKey('mata_kuliah.kode_mk'), nullable=False)
     jam = db.Column(db.Time)
     hari = db.Column(db.String(10))
 

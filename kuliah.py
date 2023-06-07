@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+import base64
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:admin@localhost:5433/exercise'
@@ -96,62 +97,87 @@ class KelasAmpu(db.Model):
         self.kode_ruang_kelas = kode_ruang_kelas
 
 
+@app.get('/')
+def login():
+    auth = request.headers.get('Authorization')
+    auth_type, code = auth.split(' ')
+    decoded_string = (base64.b64decode(code).decode())
+    username, password = decoded_string.split(':')
+
+    mhs = Mahasiswa.query.get(username)
+    dsn = Dosen.query.get(username)
+
+    if mhs:
+        return 'mahasiswa'
+    elif dsn:
+        return 'dosen'
+
+
 @app.get('/mahasiswa')
 def getMahasiswa():
-    datamahasiswa = Mahasiswa.query.all()
-    response = [
-        {
-            'nim':m.nim,
-            'nama':m.nama,
-            'gender':m.gender,
-            'kontak':m.kontak,
-            'email':m.email
-        } for m in datamahasiswa
-    ]
-    return {'count': len(response), 'mahasiswa':response}
+    if login() == 'mahasiswa':
+        datamahasiswa = Mahasiswa.query.all()
+        response = [
+            {
+                'nim':m.nim,
+                'nama':m.nama,
+                'gender':m.gender,
+                'kontak':m.kontak,
+                'email':m.email
+            } for m in datamahasiswa
+        ]
+        return {'count': len(response), 'mahasiswa':response}
+    else:
+        return 'You are Not Authorized'
 
 @app.post('/mahasiswa')
 def addMahasiswa():
-    data = request.get_json()
-    new_mhs = Mahasiswa(
-        nama = data.get('nama'),
-        gender = data.get('gender'),
-        kontak = data.get('kontak'),
-        email = data.get('email')
-    )
-    db.session.add(new_mhs)
-    db.session.commit()
-    return {"message":f"Mahasiswa {new_mhs.nama} ditambahkan"}
+    if login() == 'mahasiswa':
+        data = request.get_json()
+        new_mhs = Mahasiswa(
+            nama = data.get('nama'),
+            gender = data.get('gender'),
+            kontak = data.get('kontak'),
+            email = data.get('email')
+        )
+        db.session.add(new_mhs)
+        db.session.commit()
+        return {"message":f"Mahasiswa {new_mhs.nama} ditambahkan"}
+    else:
+        return 'You are Not Authorized'
 
 @app.route('/mahasiswa/<nim>', methods=['GET', 'PUT', 'DELETE'])
 def handleMahasiswa(nim):
-    mhs = Mahasiswa.query.get_or_404(nim)
+    if login() == 'mahasiswa':
+        mhs = Mahasiswa.query.get_or_404(nim)
 
-    if request.method == 'GET':
-        response = {
-            'nim':mhs.nim,
-            'nama':mhs.nama,
-            'gender':mhs.gender,
-            'kontak':mhs.kontak,
-            'email':mhs.email
-        }
-        return {'message':'success', 'data':response}
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        mhs.nim = data.get('nim')
-        mhs.nama = data.get('nama')
-        mhs.gender = data.get('gender')
-        mhs.kontak = data.get('kontak')
-        mhs.email = data.get('email')
-        db.session.add(mhs)
-        db.session.commit()
-        return {'message': f'Mahasiswa {mhs.nama} berhasil diupdate'}
-    
-    elif request.method == 'DELETE':
-        db.session.delete(mhs)
-        db.session.commit()
-        return {'message': f'Mahasiswa {mhs.nama} berhasil dihapus'}
+        if request.method == 'GET':
+            response = {
+                'nim':mhs.nim,
+                'nama':mhs.nama,
+                'gender':mhs.gender,
+                'kontak':mhs.kontak,
+                'email':mhs.email
+            }
+            return {'message':'success', 'data':response}
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            mhs.nim = data.get('nim')
+            mhs.nama = data.get('nama')
+            mhs.gender = data.get('gender')
+            mhs.kontak = data.get('kontak')
+            mhs.email = data.get('email')
+            db.session.add(mhs)
+            db.session.commit()
+            return {'message': f'Mahasiswa {mhs.nama} berhasil diupdate'}
+        
+        elif request.method == 'DELETE':
+            db.session.delete(mhs)
+            db.session.commit()
+            return {'message': f'Mahasiswa {mhs.nama} berhasil dihapus'}
+    else:
+        return 'You are Not Authorized'
 
 @app.get('/matakuliah')
 def getMatkul():

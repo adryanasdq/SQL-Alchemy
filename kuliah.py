@@ -76,9 +76,11 @@ class RuangKelas(db.Model):
     jam = db.Column(db.Time)
     hari = db.Column(db.String(10))
 
-    def __init__(self, kode_ruang_kelas, nama_ruang_kelas, jam, hari):
+    def __init__(self, kode_ruang_kelas, nama_ruang_kelas, nip_dosen, kode_mk, jam, hari):
         self.kode_ruang_kelas = kode_ruang_kelas
         self.nama_ruang_kelas = nama_ruang_kelas
+        self.nip_dosen = nip_dosen
+        self.kode_mk = kode_mk
         self.jam = jam
         self.hari = hari
 
@@ -311,14 +313,14 @@ def addRuangKelas():
     new_ruang_kelas = RuangKelas(
         kode_ruang_kelas = data.get('kode_ruang_kelas'),
         nama_ruang_kelas = data.get('nama_ruang_kelas'),
-        nip_dosen = data.get('nip_dosen'),
+        nip_dosen = int(data.get('nip_dosen')),
         kode_mk = data.get('kode_mk'),
         jam = data.get('jam'),
         hari = data.get('hari')
     )
     db.session.add(new_ruang_kelas)
     db.session.commit()
-    return {'message':f'Ruang {new_ruang_kelas.nama} ditambahkan'}
+    return {'message':f'Ruang {new_ruang_kelas.nama_ruang_kelas} ditambahkan'}
 
 @app.route('/ruangkelas/<kode_ruang_kelas>', methods=['GET', 'PUT', 'DELETE'])
 def handleRuangKelas(kode_ruang_kelas):
@@ -337,7 +339,7 @@ def handleRuangKelas(kode_ruang_kelas):
     
     elif request.method == 'PUT':
         data = request.get_json()
-        rk.kode_ruang_kelas = int(data.get('kode_ruang_kelas'))
+        rk.kode_ruang_kelas = data.get('kode_ruang_kelas')
         rk.nama_ruang_kelas = data.get('nama_ruang_kelas')
         rk.nip_dosen = data.get('nip_dosen')
         rk.kode_mk = data.get('kode_mk')
@@ -345,12 +347,12 @@ def handleRuangKelas(kode_ruang_kelas):
         rk.hari = data.get('hari')
         db.session.add(rk)
         db.session.commit()
-        return {'message': f'Dosen {rk.nama_ruang_kelas} berhasil diupdate'}
+        return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil diupdate'}
     
     elif request.method == 'DELETE':
         db.session.delete(rk)
         db.session.commit()
-        return {'message': f'Dosen {rk.nama} berhasil dihapus'}
+        return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil dihapus'}
 
 @app.get('/kelasampu')
 def getAmpu():
@@ -362,6 +364,41 @@ def getAmpu():
         } for da in dataAmpu]
     
     return {'count': len(response), 'kelasampu': response}
+
+@app.post('/kelasampu')
+def addAmpu():
+    data = request.get_json()
+    new_ampu = KelasAmpu(
+        nim = data.get('nim'),
+        kode_ruang_kelas = data.get('kode_ruang_kelas')
+    )
+    db.session.add(new_ampu)
+    db.session.commit()
+    return {'message':f'Kelas ampu {new_ampu.nim} ditambahkan'}
+
+@app.route('/kelasampu/<nim>', methods=['GET', 'PUT', 'DELETE'])
+def handleAmpu(nim):
+    ampu = KelasAmpu.query.filter_by(nim=nim).first()
+
+    if request.method == 'GET':
+        response = {
+            'nim': ampu.nim,
+            'kode_ruang_kelas': ampu.kode_ruang_kelas
+        }
+        return {'message': 'success', 'data': response}
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        ampu.nim = data.get('nim')
+        ampu.kode_ruang_kelas = data.get('kode_ruang_kelas')
+        db.session.add(ampu)
+        db.session.commit()
+        return {'message': f'Kelas ampu {ampu.nim} berhasil diupdate'}
+    
+    elif request.method == 'DELETE':
+        db.session.delete(ampu)
+        db.session.commit()
+        return {'message': f'Kelas ampu {ampu.nim} berhasil dihapus'}
 
 if __name__ == '__main__':
 	app.run(debug=True)

@@ -457,7 +457,7 @@ def handleAmpu(nim):
     else:
         return {
             'error': 'Unauthorized',
-            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+            'message': 'Hanya mahasiswa yang boleh melakukan operasi ini'
         }
     
 if __name__ == '__main__':

@@ -106,35 +106,37 @@ def login():
     decoded_string = (base64.b64decode(code).decode())
     username, password = decoded_string.split(':')
 
-    mhs = Mahasiswa.query.get(username)
-    dsn = Dosen.query.get(username)
+    try:
+        mhs = Mahasiswa.query.get(username)
+        dsn = Dosen.query.get(username)
 
-    if mhs:
-        return 'mahasiswa'
-    elif dsn:
-        return 'dosen'
-
+        if mhs:                 # AUTH:
+            return 'mahasiswa'  # Siapapun bisa get info 
+        elif dsn:               # Mahasiswa hanya bisa enroll/update/unroll kelas ampu, dosen tidak bisa
+            return 'dosen'      # Dosen bisa mendaftarkan mahasiswa baru, update, atau DO; edit matkul; edit dosen; dan edit ruang kelas
+    except:
+        return {
+            'error': 'Unknown User',
+            'message': 'User tidak dikenali'
+        }
 
 @app.get('/mahasiswa')
 def getMahasiswa():
-    if login() == 'mahasiswa':
-        datamahasiswa = Mahasiswa.query.all()
-        response = [
-            {
-                'nim':m.nim,
-                'nama':m.nama,
-                'gender':m.gender,
-                'kontak':m.kontak,
-                'email':m.email
-            } for m in datamahasiswa
-        ]
-        return {'count': len(response), 'mahasiswa':response}
-    else:
-        return 'You are Not Authorized'
+    datamahasiswa = Mahasiswa.query.all()
+    response = [
+        {
+            'nim':m.nim,
+            'nama':m.nama,
+            'gender':m.gender,
+            'kontak':m.kontak,
+            'email':m.email
+        } for m in datamahasiswa
+    ]
+    return {'count': len(response), 'mahasiswa':response}
 
 @app.post('/mahasiswa')
 def addMahasiswa():
-    if login() == 'mahasiswa':
+    if login() == 'dosen':
         data = request.get_json()
         new_mhs = Mahasiswa(
             nama = data.get('nama'),
@@ -146,11 +148,14 @@ def addMahasiswa():
         db.session.commit()
         return {"message":f"Mahasiswa {new_mhs.nama} ditambahkan"}
     else:
-        return 'You are Not Authorized'
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.route('/mahasiswa/<nim>', methods=['GET', 'PUT', 'DELETE'])
 def handleMahasiswa(nim):
-    if login() == 'mahasiswa':
+    if login() == 'dosen':
         mhs = Mahasiswa.query.get_or_404(nim)
 
         if request.method == 'GET':
@@ -179,7 +184,10 @@ def handleMahasiswa(nim):
             db.session.commit()
             return {'message': f'Mahasiswa {mhs.nama} berhasil dihapus'}
     else:
-        return 'You are Not Authorized'
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.get('/matakuliah')
 def getMatkul():
@@ -195,41 +203,53 @@ def getMatkul():
 
 @app.post('/matakuliah')
 def addMatkul():
-    data = request.get_json()
-    new_matkul = Matkul(
-        kode_mk = data.get('kode_mk'),
-        nama_mk = data.get('nama_mk'),
-        sks = data.get('sks')
-    )
-    db.session.add(new_matkul)
-    db.session.commit()
-    return {'message':f'Matkul {new_matkul.nama_mk} ditambahkan'}
+    if login() == 'dosen':
+        data = request.get_json()
+        new_matkul = Matkul(
+            kode_mk = data.get('kode_mk'),
+            nama_mk = data.get('nama_mk'),
+            sks = data.get('sks')
+        )
+        db.session.add(new_matkul)
+        db.session.commit()
+        return {'message':f'Matkul {new_matkul.nama_mk} ditambahkan'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.route('/matakuliah/<kode_mk>', methods=['GET', 'PUT', 'DELETE'])
 def handleMatkul(kode_mk):
-    mk = Matkul.query.get_or_404(kode_mk)
+    if login() == 'dosen':
+        mk = Matkul.query.get_or_404(kode_mk)
 
-    if request.method == 'GET':
-        response = {
-            'kode_mk': mk.kode_mk,
-            'nama_mk': mk.nama_mk,
-            'sks': mk.sks
+        if request.method == 'GET':
+            response = {
+                'kode_mk': mk.kode_mk,
+                'nama_mk': mk.nama_mk,
+                'sks': mk.sks
+            }
+            return {'message': 'success', 'data': response}
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            mk.kode_mk = data.get('kode_mk')
+            mk.nama_mk = data.get('nama_mk')
+            mk.sks = int(data.get('sks'))
+            db.session.add(mk)
+            db.session.commit()
+            return {'message': f'Matkul {mk.nama_mk} berhasil diupdate'}
+        
+        elif request.method == 'DELETE':
+            db.session.delete(mk)
+            db.session.commit()
+            return {'message': f'Matkul {mk.nama_mk} berhasil dihapus'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
         }
-        return {'message': 'success', 'data': response}
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        mk.kode_mk = data.get('kode_mk')
-        mk.nama_mk = data.get('nama_mk')
-        mk.sks = int(data.get('sks'))
-        db.session.add(mk)
-        db.session.commit()
-        return {'message': f'Matkul {mk.nama_mk} berhasil diupdate'}
-    
-    elif request.method == 'DELETE':
-        db.session.delete(mk)
-        db.session.commit()
-        return {'message': f'Matkul {mk.nama_mk} berhasil dihapus'}
 
 @app.get('/dosen')
 def getDosen():
@@ -246,51 +266,66 @@ def getDosen():
         
         return {'count': len(response), 'mahasiswa':response}
     else:
-        return 'You are Not Authorized'
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.post('/dosen')
 def addDosen():
-    data = request.get_json()
-    new_dosen = Dosen(
-        nip_dosen = data.get('nip_dosen'),
-        nama = data.get('nama'),
-        gender = data.get('gender'),
-        kontak = data.get('kontak'),
-        email = data.get('email')
-    )
-    db.session.add(new_dosen)
-    db.session.commit()
-    return {'message':f'Dosen {new_dosen.nama} ditambahkan'}
+    if login() == 'dosen':
+        data = request.get_json()
+        new_dosen = Dosen(
+            nip_dosen = data.get('nip_dosen'),
+            nama = data.get('nama'),
+            gender = data.get('gender'),
+            kontak = data.get('kontak'),
+            email = data.get('email')
+        )
+        db.session.add(new_dosen)
+        db.session.commit()
+        return {'message':f'Dosen {new_dosen.nama} ditambahkan'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.route('/dosen/<nip_dosen>', methods=['GET', 'PUT', 'DELETE'])
 def handleDosen(nip_dosen):
-    dsn = Dosen.query.get_or_404(nip_dosen)
+    if login() == 'dosen':
+        dsn = Dosen.query.get_or_404(nip_dosen)
 
-    if request.method == 'GET':
-        response = {
-            'nip_dosen': dsn.nip_dosen,
-            'nama': dsn.nama,
-            'gender': dsn.gender,
-            'kontak': dsn.kontak,
-            'email': dsn.email
+        if request.method == 'GET':
+            response = {
+                'nip_dosen': dsn.nip_dosen,
+                'nama': dsn.nama,
+                'gender': dsn.gender,
+                'kontak': dsn.kontak,
+                'email': dsn.email
+            }
+            return {'message': 'success', 'data': response}
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            dsn.nip_dosen = int(data.get('nip_dosen'))
+            dsn.nama = data.get('nama')
+            dsn.gender = data.get('gender')
+            dsn.kontak = data.get('kontak')
+            dsn.email = data.get('email')
+            db.session.add(dsn)
+            db.session.commit()
+            return {'message': f'Dosen {dsn.nama} berhasil diupdate'}
+        
+        elif request.method == 'DELETE':
+            db.session.delete(dsn)
+            db.session.commit()
+            return {'message': f'Dosen {dsn.nama} berhasil dihapus'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
         }
-        return {'message': 'success', 'data': response}
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        dsn.nip_dosen = int(data.get('nip_dosen'))
-        dsn.nama = data.get('nama')
-        dsn.gender = data.get('gender')
-        dsn.kontak = data.get('kontak')
-        dsn.email = data.get('email')
-        db.session.add(dsn)
-        db.session.commit()
-        return {'message': f'Dosen {dsn.nama} berhasil diupdate'}
-    
-    elif request.method == 'DELETE':
-        db.session.delete(dsn)
-        db.session.commit()
-        return {'message': f'Dosen {dsn.nama} berhasil dihapus'}
 
 @app.get('/ruangkelas')
 def getKelas():
@@ -309,50 +344,62 @@ def getKelas():
 
 @app.post('/ruangkelas')
 def addRuangKelas():
-    data = request.get_json()
-    new_ruang_kelas = RuangKelas(
-        kode_ruang_kelas = data.get('kode_ruang_kelas'),
-        nama_ruang_kelas = data.get('nama_ruang_kelas'),
-        nip_dosen = int(data.get('nip_dosen')),
-        kode_mk = data.get('kode_mk'),
-        jam = data.get('jam'),
-        hari = data.get('hari')
-    )
-    db.session.add(new_ruang_kelas)
-    db.session.commit()
-    return {'message':f'Ruang {new_ruang_kelas.nama_ruang_kelas} ditambahkan'}
+    if login() == 'dosen':
+        data = request.get_json()
+        new_ruang_kelas = RuangKelas(
+            kode_ruang_kelas = data.get('kode_ruang_kelas'),
+            nama_ruang_kelas = data.get('nama_ruang_kelas'),
+            nip_dosen = int(data.get('nip_dosen')),
+            kode_mk = data.get('kode_mk'),
+            jam = data.get('jam'),
+            hari = data.get('hari')
+        )
+        db.session.add(new_ruang_kelas)
+        db.session.commit()
+        return {'message':f'Ruang {new_ruang_kelas.nama_ruang_kelas} ditambahkan'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
+        }
 
 @app.route('/ruangkelas/<kode_ruang_kelas>', methods=['GET', 'PUT', 'DELETE'])
 def handleRuangKelas(kode_ruang_kelas):
-    rk = RuangKelas.query.get_or_404(kode_ruang_kelas)
+    if login() == 'dosen':
+        rk = RuangKelas.query.get_or_404(kode_ruang_kelas)
 
-    if request.method == 'GET':
-        response = {
-            'kode_ruang_kelas': rk.kode_ruang_kelas,
-            'nama_ruang_kelas': rk.nama_ruang_kelas,
-            'nip_dosen': rk.nip_dosen,
-            'kode_mk': rk.kode_mk,
-            'jam': str(rk.jam),
-            'hari': rk.hari
+        if request.method == 'GET':
+            response = {
+                'kode_ruang_kelas': rk.kode_ruang_kelas,
+                'nama_ruang_kelas': rk.nama_ruang_kelas,
+                'nip_dosen': rk.nip_dosen,
+                'kode_mk': rk.kode_mk,
+                'jam': str(rk.jam),
+                'hari': rk.hari
+            }
+            return {'message': 'success', 'data': response}
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            rk.kode_ruang_kelas = data.get('kode_ruang_kelas')
+            rk.nama_ruang_kelas = data.get('nama_ruang_kelas')
+            rk.nip_dosen = data.get('nip_dosen')
+            rk.kode_mk = data.get('kode_mk')
+            rk.jam = data.get('jam')
+            rk.hari = data.get('hari')
+            db.session.add(rk)
+            db.session.commit()
+            return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil diupdate'}
+        
+        elif request.method == 'DELETE':
+            db.session.delete(rk)
+            db.session.commit()
+            return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil dihapus'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
         }
-        return {'message': 'success', 'data': response}
-    
-    elif request.method == 'PUT':
-        data = request.get_json()
-        rk.kode_ruang_kelas = data.get('kode_ruang_kelas')
-        rk.nama_ruang_kelas = data.get('nama_ruang_kelas')
-        rk.nip_dosen = data.get('nip_dosen')
-        rk.kode_mk = data.get('kode_mk')
-        rk.jam = data.get('jam')
-        rk.hari = data.get('hari')
-        db.session.add(rk)
-        db.session.commit()
-        return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil diupdate'}
-    
-    elif request.method == 'DELETE':
-        db.session.delete(rk)
-        db.session.commit()
-        return {'message': f'Ruang kelas {rk.nama_ruang_kelas} berhasil dihapus'}
 
 @app.get('/kelasampu')
 def getAmpu():
@@ -367,38 +414,51 @@ def getAmpu():
 
 @app.post('/kelasampu')
 def addAmpu():
-    data = request.get_json()
-    new_ampu = KelasAmpu(
-        nim = data.get('nim'),
-        kode_ruang_kelas = data.get('kode_ruang_kelas')
-    )
-    db.session.add(new_ampu)
-    db.session.commit()
-    return {'message':f'Kelas ampu {new_ampu.nim} ditambahkan'}
-
+    if login() == 'mahasiswa':
+        data = request.get_json()
+        new_ampu = KelasAmpu(
+            nim = data.get('nim'),
+            kode_ruang_kelas = data.get('kode_ruang_kelas')
+        )
+        db.session.add(new_ampu)
+        db.session.commit()
+        return {'message':f'Kelas ampu {new_ampu.nim} ditambahkan'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya mahasiswa yang boleh melakukan operasi ini'
+        }
+    
 @app.route('/kelasampu/<nim>', methods=['GET', 'PUT', 'DELETE'])
 def handleAmpu(nim):
-    ampu = KelasAmpu.query.filter_by(nim=nim).first()
+    if login() == 'mahasiswa':
+        ampu = KelasAmpu.query.filter_by(nim=nim).first()
 
-    if request.method == 'GET':
-        response = {
-            'nim': ampu.nim,
-            'kode_ruang_kelas': ampu.kode_ruang_kelas
+        if request.method == 'GET':
+            response = {
+                'nim': ampu.nim,
+                'kode_ruang_kelas': ampu.kode_ruang_kelas,
+                'nama': ampu.mahasiswa.nama
+            }
+            return {'message': 'success', 'data': response}
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            ampu.nim = data.get('nim')
+            ampu.kode_ruang_kelas = data.get('kode_ruang_kelas')
+            db.session.add(ampu)
+            db.session.commit()
+            return {'message': f'Kelas ampu {ampu.nim} berhasil diupdate'}
+        
+        elif request.method == 'DELETE':
+            db.session.delete(ampu)
+            db.session.commit()
+            return {'message': f'Kelas ampu {ampu.nim} berhasil dihapus'}
+    else:
+        return {
+            'error': 'Unauthorized',
+            'message': 'Hanya dosen yang boleh melakukan operasi ini'
         }
-        return {'message': 'success', 'data': response}
     
-    elif request.method == 'PUT':
-        data = request.get_json()
-        ampu.nim = data.get('nim')
-        ampu.kode_ruang_kelas = data.get('kode_ruang_kelas')
-        db.session.add(ampu)
-        db.session.commit()
-        return {'message': f'Kelas ampu {ampu.nim} berhasil diupdate'}
-    
-    elif request.method == 'DELETE':
-        db.session.delete(ampu)
-        db.session.commit()
-        return {'message': f'Kelas ampu {ampu.nim} berhasil dihapus'}
-
 if __name__ == '__main__':
 	app.run(debug=True)

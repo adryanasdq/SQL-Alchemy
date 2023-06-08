@@ -231,17 +231,20 @@ def handleMatkul(kode_mk):
 
 @app.get('/dosen')
 def getDosen():
-    dataDosen = Dosen.query.all()
-    response = [
-        {
-            'nip_dosen':dd.nip_dosen,
-            'nama':dd.nama,
-            'gender':dd.gender,
-            'kontak':dd.kontak,
-            'email':dd.email
-        } for dd in dataDosen]
-    
-    return {'count': len(response), 'mahasiswa':response}
+    if login() == 'dosen':
+        dataDosen = Dosen.query.all()
+        response = [
+            {
+                'nip_dosen':dd.nip_dosen,
+                'nama':dd.nama,
+                'gender':dd.gender,
+                'kontak':dd.kontak,
+                'email':dd.email
+            } for dd in dataDosen]
+        
+        return {'count': len(response), 'mahasiswa':response}
+    else:
+        return 'You are Not Authorized'
 
 @app.post('/dosen')
 def addDosen():
@@ -292,8 +295,8 @@ def getKelas():
     datakelas = RuangKelas.query.all()
     response = [
         {
-            'kode_kelas': dk.kode_ruang_kelas,
-            'nama_kelas': dk.nama_ruang_kelas,
+            'kode_ruang_kelas': dk.kode_ruang_kelas,
+            'nama_ruang_kelas': dk.nama_ruang_kelas,
             'nip_dosen': dk.nip_dosen,
             'kode_mk': dk.kode_mk,
             'jam': str(dk.jam),
@@ -301,6 +304,53 @@ def getKelas():
         } for dk in datakelas]
     
     return {'count': len(response), 'ruangkelas': response}
+
+@app.post('/ruangkelas')
+def addRuangKelas():
+    data = request.get_json()
+    new_ruang_kelas = RuangKelas(
+        kode_ruang_kelas = data.get('kode_ruang_kelas'),
+        nama_ruang_kelas = data.get('nama_ruang_kelas'),
+        nip_dosen = data.get('nip_dosen'),
+        kode_mk = data.get('kode_mk'),
+        jam = data.get('jam'),
+        hari = data.get('hari')
+    )
+    db.session.add(new_ruang_kelas)
+    db.session.commit()
+    return {'message':f'Ruang {new_ruang_kelas.nama} ditambahkan'}
+
+@app.route('/ruangkelas/<kode_ruang_kelas>', methods=['GET', 'PUT', 'DELETE'])
+def handleRuangKelas(kode_ruang_kelas):
+    rk = RuangKelas.query.get_or_404(kode_ruang_kelas)
+
+    if request.method == 'GET':
+        response = {
+            'kode_ruang_kelas': rk.kode_ruang_kelas,
+            'nama_ruang_kelas': rk.nama_ruang_kelas,
+            'nip_dosen': rk.nip_dosen,
+            'kode_mk': rk.kode_mk,
+            'jam': str(rk.jam),
+            'hari': rk.hari
+        }
+        return {'message': 'success', 'data': response}
+    
+    elif request.method == 'PUT':
+        data = request.get_json()
+        rk.kode_ruang_kelas = int(data.get('kode_ruang_kelas'))
+        rk.nama_ruang_kelas = data.get('nama_ruang_kelas')
+        rk.nip_dosen = data.get('nip_dosen')
+        rk.kode_mk = data.get('kode_mk')
+        rk.jam = data.get('jam')
+        rk.hari = data.get('hari')
+        db.session.add(rk)
+        db.session.commit()
+        return {'message': f'Dosen {rk.nama_ruang_kelas} berhasil diupdate'}
+    
+    elif request.method == 'DELETE':
+        db.session.delete(rk)
+        db.session.commit()
+        return {'message': f'Dosen {rk.nama} berhasil dihapus'}
 
 @app.get('/kelasampu')
 def getAmpu():

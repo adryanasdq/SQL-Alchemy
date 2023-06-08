@@ -139,10 +139,10 @@ def addMahasiswa():
     if login() == 'dosen':
         data = request.get_json()
         new_mhs = Mahasiswa(
-            nama = data.get('nama'),
-            gender = data.get('gender'),
-            kontak = data.get('kontak'),
-            email = data.get('email')
+            data.get('nama'),
+            data.get('gender'),
+            data.get('kontak'),
+            data.get('email')
         )
         db.session.add(new_mhs)
         db.session.commit()
@@ -206,9 +206,9 @@ def addMatkul():
     if login() == 'dosen':
         data = request.get_json()
         new_matkul = Matkul(
-            kode_mk = data.get('kode_mk'),
-            nama_mk = data.get('nama_mk'),
-            sks = data.get('sks')
+            data.get('kode_mk'),
+            data.get('nama_mk'),
+            data.get('sks')
         )
         db.session.add(new_matkul)
         db.session.commit()
@@ -276,11 +276,11 @@ def addDosen():
     if login() == 'dosen':
         data = request.get_json()
         new_dosen = Dosen(
-            nip_dosen = data.get('nip_dosen'),
-            nama = data.get('nama'),
-            gender = data.get('gender'),
-            kontak = data.get('kontak'),
-            email = data.get('email')
+            data.get('nip_dosen'),
+            data.get('nama'),
+            data.get('gender'),
+            data.get('kontak'),
+            data.get('email')
         )
         db.session.add(new_dosen)
         db.session.commit()
@@ -347,12 +347,12 @@ def addRuangKelas():
     if login() == 'dosen':
         data = request.get_json()
         new_ruang_kelas = RuangKelas(
-            kode_ruang_kelas = data.get('kode_ruang_kelas'),
-            nama_ruang_kelas = data.get('nama_ruang_kelas'),
-            nip_dosen = int(data.get('nip_dosen')),
-            kode_mk = data.get('kode_mk'),
-            jam = data.get('jam'),
-            hari = data.get('hari')
+            data.get('kode_ruang_kelas'),
+            data.get('nama_ruang_kelas'),
+            int(data.get('nip_dosen')),
+            data.get('kode_mk'),
+            data.get('jam'),
+            data.get('hari')
         )
         db.session.add(new_ruang_kelas)
         db.session.commit()
@@ -417,8 +417,8 @@ def addAmpu():
     if login() == 'mahasiswa':
         data = request.get_json()
         new_ampu = KelasAmpu(
-            nim = data.get('nim'),
-            kode_ruang_kelas = data.get('kode_ruang_kelas')
+            data.get('nim'),
+            data.get('kode_ruang_kelas')
         )
         db.session.add(new_ampu)
         db.session.commit()

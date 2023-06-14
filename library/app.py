@@ -25,6 +25,46 @@ class Pengguna(db.Model):
     def __repr__(self):
         return f'<Pengguna {self.nama}, tipe: {self.tipe}>'
 
+class Penulis(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nama = db.Column(db.String())
+    kewarganegaraan = db.Column(db.String())
+    # relation_kelas_ampu = db.relationship('KelasAmpu', backref='mahasiswa', lazy='dynamic')
+
+    def __init__(self, nama, jenis_kelamin, kewarganegaraan):
+        self.nama = nama
+        self.jenis_kelamin = jenis_kelamin
+        self.kewarganegaraan = kewarganegaraan
+
+    def __repr__(self):
+        return f'<Penulis {self.nama}'
+
+class Genre(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nama = db.Column(db.String())
+    # relation_kelas_ampu = db.relationship('KelasAmpu', backref='mahasiswa', lazy='dynamic')
+
+    def __init__(self, nama, jenis_kelamin, kewarganegaraan):
+        self.nama = nama
+        self.jenis_kelamin = jenis_kelamin
+
+    def __repr__(self):
+        return f'<Genre {self.nama}'
+
+class Buku(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    judul = db.Column(db.String())
+    id_penulis = db.Column(db.Integer, unique=True, nullable=False)
+    tanggal_terbit = db.Column(db.Date)
+    # relation_kelas_ampu = db.relationship('KelasAmpu', backref='mahasiswa', lazy='dynamic')
+
+    def __init__(self, judul, id_penulis, tanggal_terbit):
+        self.judul = judul
+        self.id_penulis = id_penulis
+        self.tanggal_terbit = tanggal_terbit
+
+    def __repr__(self):
+        return f'<Buku {self.judul}'
 
 @app.get('/')
 def login():

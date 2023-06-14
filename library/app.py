@@ -81,19 +81,19 @@ class Transaksi(db.Model):
     id_buku = db.Column(db.Integer, db.ForeignKey('buku.id'), primary_key=True, unique=True, nullable=False)
     id_pengguna = db.Column(db.Integer, db.ForeignKey('pengguna.id'), primary_key=True, unique=True, nullable=False)
     status = db.Column(db.String(), nullable=False)
-    pustakawan_persetujuan = db.Column(db.String(), nullable=False)
-    tanggal_persetujuan = db.Column(db.Date, nullable=False)
-    pustakawan_pengembalian = db.Column(db.String(), nullable=False)
-    tanggal_pengembalian = db.Column(db.Date, nullable=False)
+    penerima_permintaan = db.Column(db.String(), nullable=False)
+    tanggal_diterima = db.Column(db.Date, nullable=False)
+    penerima_pengembalian = db.Column(db.String(), nullable=False)
+    tanggal_dikembalikan = db.Column(db.Date, nullable=False)
 
-    def __init__(self, id_buku, id_pengguna, status, pustakawan_persetujuan, tanggal_persetujuan, pustakawan_pengembalian, tanggal_pengembalian):
+    def __init__(self, id_buku, id_pengguna, status, penerima_permintaan, tanggal_diterima, penerima_pengembalian, tanggal_dikembalikan):
         self.id_buku = id_buku
         self.id_pengguna = id_pengguna
         self.status = status
-        self.pustakawan_persetujuan = pustakawan_persetujuan
-        self.tanggal_persetujuan = tanggal_persetujuan
-        self.pustakawan_pengembalian = pustakawan_pengembalian
-        self.tanggal_pengembalian = tanggal_pengembalian
+        self.penerima_permintaan = penerima_permintaan
+        self.tanggal_diterima = tanggal_diterima
+        self.penerima_pengembalian = penerima_pengembalian
+        self.tanggal_dikembalikan = tanggal_dikembalikan
     
     def __repr__(self):
         return f'<Transaksi {self.judul}'
@@ -144,7 +144,7 @@ def getPenggunaSpesifik(id):
         'kontak':user.kontak,
         'tipe':user.tipe
     }
-    return {'message':'success', 'data':response}
+    return {'message':'success', 'response':response}
 
 @app.post('/pengguna')
 def addPengguna():
@@ -193,6 +193,97 @@ def deletePengguna(id):
     db.session.delete(user)
     db.session.commit()
     return {'message': f'Pengguna {user.nama} berhasil dihapus'}
+
+
+@app.get('/penulis')
+def getPenulis():
+    data = Penulis.query.all()
+    response = [
+        {
+            'id':p.id,
+            'nama':p.nama,
+            'kewarganegaraan':p.kewarganegaraan
+        } for p in data
+    ]
+    return {'count': len(response), 'data':response}
+
+@app.get('/penulis/<int:id>')
+def getPenulisSpesifik(id):
+    author = Penulis.query.get(id)
+    response = {
+        'id':author.id,
+        'nama':author.nama,
+        'tipe':author.kewarganegaraan
+    }
+    return {'message':'success', 'response':response}
+
+
+@app.get('/genre')
+def getGenre():
+    data = Genre.query.all()
+    response = [
+        {
+            'id':g.id,
+            'nama':g.nama
+        } for g in data
+    ]
+    return {'count': len(response), 'data':response}
+
+@app.get('/genre/<int:id>')
+def getGenreSpesifik(id):
+    genre = Genre.query.get(id)
+    response = {
+        'id':genre.id,
+        'nama':genre.nama
+    }
+    return {'message':'success', 'response':response}
+
+
+@app.get('/buku')
+def getBuku():
+    data = Buku.query.all()
+    response = [
+        {
+            'id':b.id,
+            'judul':b.judul,
+            'id_penulis':b.id_penulis,
+            'tanggal_terbit':b.tanggal_terbit
+        } for b in data
+    ]
+    return {'count': len(response), 'data':response}
+
+@app.get('/buku/<int:id>')
+def getBukuSpesifik(id):
+    buku = Buku.query.get(id)
+    response = {
+        'id':buku.id,
+        'judul':buku.judul,
+        'id_penulis':buku.id_penulis,
+        'tanggal_terbit':buku.tanggal_terbit
+    }
+    return {'message':'success', 'response':response}
+
+
+@app.get('/genrebuku')
+def getGenreBuku():
+    data = GenreBuku.query.all()
+    response = [
+        {
+            'id_buku':gb.id_buku,
+            'id_genre':gb.id_genre
+        } for gb in data
+    ]
+    return {'count': len(response), 'data':response}
+
+@app.get('/genrebuku/<int:id>')
+def getGenreBukuSpesifik(id):
+    # genrebuku = db.session.get(GenreBuku, id)
+    genrebuku = GenreBuku.query.filter_by(id_buku=id).first()
+    response = {
+        'id_buku':genrebuku.id_buku,
+        'id_genre':genrebuku.id_genre               # hanya hasil teratas
+    }
+    return {'message':'success', 'response':response}
 
 
 if __name__ == '__main__':

@@ -1,0 +1,8 @@
+- Perlu ditambahkan kolom nama pengguna di tabel Transaksi untuk kepentingan tracking. Bila terjadi penggantian nama
+di suatu id pengguna, maka tabel Transaksi akan tetap menyimpan nama original dari id pengguna tersebut.
+
+- Dari poin di atas dapat diartikan bahwa update data pengguna mungkin dilakukan.
+
+- Pustakawan yang meng-approve dan menerima pengembalian buku mungkin berbeda.
+
+- Sebaiknya buat endpoint berbeda jika action berbeda. ---> (??)

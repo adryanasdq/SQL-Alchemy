@@ -3,6 +3,6 @@ di suatu id pengguna, maka tabel Transaksi akan tetap menyimpan nama original da
 
 - Dari poin di atas dapat diartikan bahwa update data pengguna mungkin dilakukan.
 
-- Pustakawan yang meng-approve dan menerima pengembalian buku mungkin berbeda.
+- Pustakawan yang meng-approve dan menerima pengembalian buku mungkin berbeda (sesuai yang login siapa)
 
-- Sebaiknya buat endpoint berbeda jika action berbeda. ---> (??)
+- Sebaiknya buat endpoint berbeda jika action berbeda, seperti update pustakawan_approve dan pustakawan_return

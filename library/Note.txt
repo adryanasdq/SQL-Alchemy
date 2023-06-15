@@ -12,8 +12,11 @@ juga judul buku.
 - Sebaiknya buat endpoint berbeda jika action berbeda, seperti update pustakawan_approve dan pustakawan_return
 
 Todo:
-1. CRUD semua selain transaksi
-2. Step by step CRUD transaksi
-3. Edit berdasarkan comment di code
-4. Tambahkan auth
-5. Cascade tabel junction
+1. CRUD semua selain transaksi (OK)
+2. Step by step CRUD transaksi (OK)
+3. Tambahkan auth (OK)
+
+Optimasi:
+1. Edit berdasarkan comment di code
+2. Actual table junction
+3. Cascading

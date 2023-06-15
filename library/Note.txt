@@ -16,3 +16,4 @@ Todo:
 2. Step by step CRUD transaksi
 3. Edit berdasarkan comment di code
 4. Tambahkan auth
+5. Cascade tabel junction

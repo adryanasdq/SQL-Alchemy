@@ -1,8 +1,17 @@
+Komentar:
 - Perlu ditambahkan kolom nama pengguna di tabel Transaksi untuk kepentingan tracking. Bila terjadi penggantian nama
-di suatu id pengguna, maka tabel Transaksi akan tetap menyimpan nama original dari id pengguna tersebut.
+di suatu id pengguna, maka tabel Transaksi akan tetap menyimpan nama original dari id pengguna tersebut. Demikian
+juga judul buku.
 
 - Dari poin di atas dapat diartikan bahwa update data pengguna mungkin dilakukan.
+
+- Tambahkan id transaksi.
 
 - Pustakawan yang meng-approve dan menerima pengembalian buku mungkin berbeda (sesuai yang login siapa)
 
 - Sebaiknya buat endpoint berbeda jika action berbeda, seperti update pustakawan_approve dan pustakawan_return
+
+Todo:
+1. CRUD semua selain transaksi
+2. Step by step CRUD transaksi
+3. Edit berdasarkan comment di code
